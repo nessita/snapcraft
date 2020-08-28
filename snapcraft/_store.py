@@ -162,7 +162,6 @@ def _check_dev_agreement_and_namespace_statuses(store) -> None:
 
 def _try_login(
     email: str,
-    password: str,
     *,
     store: storeapi.StoreClient,
     save: bool = True,
@@ -172,33 +171,18 @@ def _try_login(
     expires: str = None,
     config_fd: TextIO = None,
 ) -> None:
-    try:
-        store.login(
-            email,
-            password,
-            packages=packages,
-            acls=acls,
-            channels=channels,
-            expires=expires,
-            config_fd=config_fd,
-            save=save,
-        )
-        if not config_fd:
-            print()
-            echo.wrapped(storeapi.constants.TWO_FACTOR_WARNING)
-    except storeapi.errors.StoreTwoFactorAuthenticationRequired:
-        one_time_password = echo.prompt("Second-factor auth")
-        store.login(
-            email,
-            password,
-            one_time_password=one_time_password,
-            acls=acls,
-            packages=packages,
-            channels=channels,
-            expires=expires,
-            config_fd=config_fd,
-            save=save,
-        )
+    store.login(
+        email,
+        packages=packages,
+        acls=acls,
+        channels=channels,
+        expires=expires,
+        config_fd=config_fd,
+        save=save,
+    )
+    if not config_fd:
+        print()
+        echo.wrapped(storeapi.constants.TWO_FACTOR_WARNING)
 
     # Continue if agreement and namespace conditions are met.
     _check_dev_agreement_and_namespace_statuses(store)
@@ -218,27 +202,17 @@ def login(
         store = storeapi.StoreClient()
 
     email = ""
-    password = ""
 
     if not config_fd:
-        echo.wrapped("Enter your Ubuntu One e-mail address and password.")
+        echo.wrapped("Enter your e-mail address, a browser window will open.")
         echo.wrapped(
             "If you do not have an Ubuntu One account, you can create one "
             "at https://snapcraft.io/account"
         )
         email = echo.prompt("Email")
-        if os.getenv("SNAPCRAFT_TEST_INPUT"):
-            # Integration tests do not work well with hidden input.
-            echo.warning("Password will be visible.")
-            hide_input = False
-        else:
-            hide_input = True
-        password = echo.prompt("Password", hide_input=hide_input)
-
     try:
         _try_login(
             email,
-            password,
             store=store,
             packages=packages,
             acls=acls,
