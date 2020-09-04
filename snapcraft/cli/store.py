@@ -677,7 +677,7 @@ def export_login(login_file: str, snaps: str, channels: str, acls: str, expires:
     help="Path to file created with 'snapcraft export-login'",
 )
 def login(login_file):
-    """Login with your e-mail address.
+    """Login.
 
     If you do not have an Ubuntu One account, you can create one at
     https://snapcraft.io/account

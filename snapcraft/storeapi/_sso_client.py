@@ -17,12 +17,6 @@ from . import errors
 from . import constants
 
 
-FRANKY_CLIENT_ID = 'pTGyHHZSIMeLlEtwPPm47j8x'
-FRANKY_API_ROOT_URL = 'http://localhost:5000/auth/'
-FRANKY_AUTHORIZATION_ENDPOINT = FRANKY_API_ROOT_URL + 'oauth/authorize'
-FRANKY_TOKEN_ENDPOINT = FRANKY_API_ROOT_URL + 'oauth/token'
-
-
 class HTTPServerHandler(BaseHTTPRequestHandler):
     """HTTP Server to handle callback OAuth redirects."""
 
@@ -31,7 +25,7 @@ class HTTPServerHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
         self.wfile.write(
-            bytes('<html><h1>You may now close this window.</h1></html>',
+            bytes('<html><h2>You may now close this window.</h2></html>',
                   'utf-8'))
         self.server.path = self.path
 
@@ -54,7 +48,7 @@ def setup_callback_server(port, max_attempts=10):
     return http_server
 
 
-def get_oauth2_token(email):
+def get_oauth2_token(root_url):
     # A code_verifier is a high-entropy cryptographic random string using the
     # unreserved characters [A-Z] / [a-z] / [0-9] / "-" / "." / "_" / "~", with
     # a minimum length of 43 characters and a maximum length of 128 characters.
@@ -63,17 +57,16 @@ def get_oauth2_token(email):
     http_server = setup_callback_server(port=5500)
     redirect_uri = 'http://localhost:%s/' % http_server.server_port
     client = OAuth2Session(
-        client_id=FRANKY_CLIENT_ID,
+        client_id='pTGyHHZSIMeLlEtwPPm47j8x',  # XXX This should be a config
         scope='openid email profile',
         redirect_uri=redirect_uri,
     )
 
     uri, state = client.create_authorization_url(
-        FRANKY_AUTHORIZATION_ENDPOINT,
+        root_url + 'oauth/authorize',
         code_challenge=create_s256_code_challenge(code_verifier),
         code_challenge_method='S256',
         nonce=generate_token(),
-        email=email,
     )
     print('A browser should be opened pointing to:\n\n{}\n\n'
           'Please login and close the window when finished.\n'.format(uri))
@@ -84,7 +77,7 @@ def get_oauth2_token(email):
     else:
         redirected = input('Please paste redirect URL: ').strip()
     token = client.fetch_token(
-        FRANKY_TOKEN_ENDPOINT,
+        root_url + 'oauth/token',
         authorization_response=redirected,
         code_verifier=code_verifier,
     )
@@ -99,11 +92,11 @@ class SSOClient(Client):
     def __init__(self, conf):
         super().__init__(
             conf,
-            os.environ.get("FRANKY_API_ROOT_URL", FRANKY_API_ROOT_URL),
+            os.environ.get("FRANKY_API_ROOT_URL", 'http://localhost:5000/'),
         )
 
-    def get_unbound_discharge(self, email, caveat_id):
-        token = get_oauth2_token(email=email)
+    def get_unbound_discharge(self, caveat_id):
+        token = get_oauth2_token(self.root_url)
 
         data = {
             'access_token': token['access_token'],
@@ -129,7 +122,7 @@ class SSOClient(Client):
     def refresh_unbound_discharge(self, unbound_discharge):
         data = {"discharge_macaroon": unbound_discharge}
         response = self.post(
-            "tokens/refresh",
+            "macaroons/refresh",
             data=json.dumps(data),
             headers={"Content-Type": "application/json", "Accept": "application/json"},
         )

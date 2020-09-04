@@ -161,7 +161,6 @@ def _check_dev_agreement_and_namespace_statuses(store) -> None:
 
 
 def _try_login(
-    email: str,
     *,
     store: storeapi.StoreClient,
     save: bool = True,
@@ -172,7 +171,6 @@ def _try_login(
     config_fd: TextIO = None,
 ) -> None:
     store.login(
-        email,
         packages=packages,
         acls=acls,
         channels=channels,
@@ -201,18 +199,14 @@ def login(
     if not store:
         store = storeapi.StoreClient()
 
-    email = ""
-
     if not config_fd:
-        echo.wrapped("Enter your e-mail address, a browser window will open.")
+        echo.wrapped("A browser will be opened to complete the login process.")
         echo.wrapped(
             "If you do not have an Ubuntu One account, you can create one "
             "at https://snapcraft.io/account"
         )
-        email = echo.prompt("Email")
     try:
         _try_login(
-            email,
             store=store,
             packages=packages,
             acls=acls,

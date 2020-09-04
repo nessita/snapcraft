@@ -56,7 +56,6 @@ class StoreClient:
 
     def login(
         self,
-        email: str,
         acls: Iterable[str] = None,
         channels: Iterable[str] = None,
         packages: Iterable[Dict[str, str]] = None,
@@ -82,13 +81,12 @@ class StoreClient:
             # the macaroon.
             macaroon = self.sca.get_macaroon(acls, packages, channels, expires)
             caveat_id = self._extract_caveat_id(macaroon)
-            unbound_discharge = self.sso.get_unbound_discharge(email, caveat_id)
+            unbound_discharge = self.sso.get_unbound_discharge(caveat_id)
             # Clear any old data before setting.
             self.conf.clear()
             # The macaroon has been discharged, save it in the config
             self.conf.set("macaroon", macaroon)
             self.conf.set("unbound_discharge", unbound_discharge)
-            self.conf.set("email", email)
 
         if save:
             self.conf.save()
