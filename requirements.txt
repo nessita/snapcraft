@@ -1,3 +1,4 @@
+authlib==0.14.3
 click==7.1.1
 configparser==3.5.0
 jsonschema==2.5.1
